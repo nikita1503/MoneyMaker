@@ -39,7 +39,6 @@ export default function Dashboard() {
     fetch("/api/config").then((r) => r.json()).then(setConfig);
   }, []);
 
-  // Global Esc to close overlays.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -141,7 +140,6 @@ export default function Dashboard() {
     update(n);
   }
 
-  // Stepper navigation — only allowed for steps with data.
   function goToStep(target: 1 | 2 | 3) {
     if (target === 1) setStep("idle");
     else if (target === 2 && ranked.length) setStep("ranked");
@@ -149,58 +147,41 @@ export default function Dashboard() {
   }
 
   const currentIdx = stepIndex(step);
-  const doneFlags = {
-    1: ranked.length > 0,
-    2: pages.length > 0,
-    3: sendResults.length > 0,
-    4: step === "sent",
-  };
 
   return (
-    <main className="mx-auto max-w-6xl px-5 md:px-8 py-8 md:py-10">
+    <main className="mx-auto max-w-5xl px-5 md:px-8 py-8 md:py-12">
       {/* Header */}
-      <header className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Money
-            <span className="bg-gradient-to-br from-accent to-accent2 bg-clip-text text-transparent">
-              Maker
-            </span>
-          </h1>
-          <p className="text-xs md:text-sm text-muted mt-1">
-            Find companies that need websites → build them → sell them.
-          </p>
+      <header className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <LogoMark />
+          <div>
+            <h1 className="font-display font-bold text-[34px] md:text-[40px] leading-none text-ink">
+              Money<span className="text-accent">Maker</span>
+            </h1>
+            <p className="mt-1 text-[15px] text-ink/75">
+              Find companies that need websites. Build 'em. Sell 'em.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn btn-ghost" onClick={() => setLogOpen(true)}>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 mr-0.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 animate-ping" />
-            </span>
-            Activity
-            {log.length > 0 && (
-              <span className="chip !py-0 !px-1.5 ml-1">{log.length}</span>
-            )}
+          <button className="btn btn-sm" onClick={() => setLogOpen(true)}>
+            <span className="inline-block h-2 w-2 rounded-full bg-success mr-1" />
+            Log {log.length > 0 && <span className="opacity-70">({log.length})</span>}
           </button>
-          <button className="btn" onClick={() => setConfigOpen(true)}>
-            <span className="text-base leading-none">⚙︎</span> Config
+          <button className="btn btn-sm btn-secondary" onClick={() => setConfigOpen(true)}>
+            Settings
           </button>
         </div>
       </header>
 
       {/* Stepper */}
-      <Stepper current={currentIdx} done={doneFlags} onJump={goToStep} />
+      <Stepper current={currentIdx} onJump={goToStep} />
 
-      {/* Wizard body — exactly one step in DOM */}
-      <section className="mt-8">
+      {/* Wizard body */}
+      <section className="mt-10">
         <div key={step} className="step-enter">
-          {(step === "idle") && (
-            <StepSearch onStart={startSearch} />
-          )}
-
-          {step === "searching" && (
-            <LoadingSearch />
-          )}
-
+          {step === "idle" && <StepSearch onStart={startSearch} />}
+          {step === "searching" && <LoadingSearch />}
           {step === "ranked" && (
             <StepRanked
               ranked={ranked}
@@ -210,11 +191,7 @@ export default function Dashboard() {
               onNext={generate}
             />
           )}
-
-          {step === "generating" && (
-            <LoadingGenerate count={pickedForGen.size} />
-          )}
-
+          {step === "generating" && <LoadingGenerate count={pickedForGen.size} />}
           {step === "generated" && (
             <StepGenerated
               pages={pages}
@@ -224,14 +201,8 @@ export default function Dashboard() {
               onNext={send}
             />
           )}
-
-          {step === "sending" && (
-            <LoadingSend count={pickedForSend.size} />
-          )}
-
-          {step === "sent" && (
-            <StepSent results={sendResults} onStartOver={startOver} />
-          )}
+          {step === "sending" && <LoadingSend count={pickedForSend.size} />}
+          {step === "sent" && <StepSent results={sendResults} onStartOver={startOver} />}
         </div>
       </section>
 
@@ -239,16 +210,21 @@ export default function Dashboard() {
       {configOpen && config && (
         <>
           <div className="overlay" onClick={() => setConfigOpen(false)} />
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Configuration">
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Settings">
             <div className="modal-inner" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-start justify-between gap-4 mb-5">
                 <div>
-                  <h3 className="text-lg font-semibold">Configuration</h3>
-                  <p className="text-xs text-muted mt-0.5">
-                    These values are baked into the outreach email.
+                  <span className="tag">settings</span>
+                  <h3 className="font-display font-bold text-[28px] mt-3 leading-tight">
+                    Tune the pitch
+                  </h3>
+                  <p className="text-ink/70 text-[15px] mt-1">
+                    These values are baked into every outreach email.
                   </p>
                 </div>
-                <button className="btn btn-ghost" onClick={() => setConfigOpen(false)}>Close</button>
+                <button className="btn btn-sm btn-ghost" onClick={() => setConfigOpen(false)}>
+                  close
+                </button>
               </div>
               <ConfigPanel
                 config={config}
@@ -263,63 +239,144 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* Activity log drawer */}
+      {/* Activity drawer */}
       {logOpen && (
         <>
           <div className="overlay" onClick={() => setLogOpen(false)} />
           <aside className="drawer" aria-label="Activity log">
-            <div className="flex items-center justify-between p-4 border-b border-line">
+            <div className="flex items-center justify-between p-5 border-b-2 border-dashed border-ink/30">
               <div>
-                <div className="text-sm font-semibold">Activity log</div>
-                <div className="text-[11px] text-muted">Most recent events</div>
+                <span className="tag">log</span>
+                <div className="font-display font-bold text-[22px] mt-2">Scribbles</div>
               </div>
-              <button className="btn btn-ghost" onClick={() => setLogOpen(false)}>Close</button>
+              <button className="btn btn-sm btn-ghost" onClick={() => setLogOpen(false)}>
+                close
+              </button>
             </div>
-            <pre className="flex-1 overflow-auto p-4 text-[11.5px] leading-6 text-white/75 whitespace-pre-wrap font-mono">
-{log.length ? log.slice().reverse().join("\n") : "No activity yet."}
-            </pre>
+            <div className="flex-1 overflow-auto p-5">
+              {log.length ? (
+                <ul className="space-y-3">
+                  {log.slice().reverse().map((line, i) => (
+                    <li key={i} className="flex gap-2 text-[15px] leading-snug">
+                      <span className="text-accent shrink-0">›</span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-ink/50 italic">nothing to see yet…</div>
+              )}
+            </div>
           </aside>
         </>
       )}
 
-      <footer className="mt-12 text-center text-[11px] text-muted">
-        Crustdata + Claude Opus 4.7 · Tune heuristics in <code>lib/heuristics.ts</code>
+      <footer className="mt-16 text-center text-[14px] text-ink/60">
+        Scribbled with Crustdata + Claude Opus 4.7 ·
+        {" "}tune heuristics in <code>lib/heuristics.ts</code>
       </footer>
     </main>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Stepper                                                             */
+/* Small decorative pieces                                              */
+/* ------------------------------------------------------------------ */
+
+function LogoMark() {
+  return (
+    <div
+      className="relative h-14 w-14 shrink-0 bg-sticky border-[3px] border-ink flex items-center justify-center font-display font-bold text-[22px] text-ink"
+      style={{
+        borderRadius: "48% 52% 46% 54% / 54% 48% 52% 46%",
+        boxShadow: "4px 4px 0 0 #2d2d2d",
+        transform: "rotate(-4deg)",
+      }}
+      aria-hidden
+    >
+      $
+      <span
+        className="absolute -top-2 -right-2 h-4 w-4 bg-accent border-2 border-ink rounded-full"
+        style={{ boxShadow: "2px 2px 0 0 #2d2d2d" }}
+      />
+    </div>
+  );
+}
+
+function HandArrow({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 140 90"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="#2d2d2d"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    >
+      <path
+        d="M8 14 C 36 12, 50 34, 58 54 C 66 74, 82 78, 112 72"
+        strokeDasharray="5 5"
+      />
+      <path d="M112 72 L 102 64" />
+      <path d="M112 72 L 104 82" />
+      <text
+        x="10"
+        y="36"
+        fill="#2d2d2d"
+        stroke="none"
+        fontFamily="var(--font-kalam), cursive"
+        fontWeight="700"
+        fontSize="15"
+        transform="rotate(-12, 10, 36)"
+      >
+        click me!
+      </text>
+    </svg>
+  );
+}
+
+function SquiggleDivider() {
+  return (
+    <svg viewBox="0 0 320 12" className="w-40 h-3" aria-hidden fill="none">
+      <path
+        d="M2 6 Q 20 1, 40 6 T 80 6 T 120 6 T 160 6 T 200 6 T 240 6 T 280 6 T 318 6"
+        stroke="#2d2d2d"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Stepper                                                              */
 /* ------------------------------------------------------------------ */
 
 function Stepper({
   current,
-  done,
   onJump,
 }: {
   current: 1 | 2 | 3 | 4;
-  done: Record<1 | 2 | 3 | 4, boolean>;
   onJump: (target: 1 | 2 | 3) => void;
 }) {
   return (
-    <div className="mt-6 md:mt-8">
-      {/* Desktop: full stepper */}
-      <div className="hidden sm:flex items-center">
+    <div className="mt-10 md:mt-14">
+      {/* Desktop */}
+      <div className="hidden sm:flex items-start">
         {STEP_META.map((s, i) => {
           const idx = s.idx as 1 | 2 | 3 | 4;
-          const state =
-            idx < current ? "done" : idx === current ? "current" : "future";
+          const state = idx < current ? "done" : idx === current ? "current" : "future";
           const clickable = state === "done" && idx !== 4;
           return (
-            <div key={s.key} className="flex items-center flex-1 last:flex-none">
+            <div key={s.key} className="flex items-start flex-1 last:flex-none">
               <div className="flex flex-col items-center">
                 <button
                   type="button"
                   disabled={!clickable}
                   onClick={() => clickable && onJump(idx as 1 | 2 | 3)}
-                  className={`stepper-node stepper-node--${state} ${
-                    clickable ? "stepper-node--clickable" : ""
+                  className={`step-node step-node--${state} ${
+                    clickable ? "step-node--clickable" : ""
                   }`}
                   aria-current={state === "current" ? "step" : undefined}
                   aria-label={`${s.label} — ${state}`}
@@ -327,17 +384,15 @@ function Stepper({
                   {state === "done" ? "✓" : s.idx}
                 </button>
                 <div
-                  className={`mt-2 text-[11px] tracking-wide uppercase ${
-                    state === "future" ? "text-muted" : "text-white/80"
-                  }`}
+                  className={`mt-3 step-label ${state === "future" ? "step-label--future" : ""}`}
                 >
                   {s.label}
                 </div>
               </div>
               {i < STEP_META.length - 1 && (
                 <div
-                  className={`stepper-line ${
-                    done[idx] || idx < current ? "stepper-line--done" : "stepper-line--future"
+                  className={`step-dash ${
+                    idx < current ? "" : "step-dash--future"
                   }`}
                 />
               )}
@@ -345,13 +400,15 @@ function Stepper({
           );
         })}
       </div>
-      {/* Mobile: compact label */}
-      <div className="sm:hidden flex items-center justify-between gap-3 card px-4 py-3">
+      {/* Mobile */}
+      <div className="sm:hidden card p-4 flex items-center justify-between gap-3" style={{ transform: "rotate(-0.6deg)" }}>
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-muted">
+          <div className="font-display font-bold text-[13px] text-ink/60 tracking-wide uppercase">
             Step {current} of 4
           </div>
-          <div className="font-semibold">{STEP_META[current - 1].label}</div>
+          <div className="font-display font-bold text-[22px] mt-0.5 leading-tight">
+            {STEP_META[current - 1].label}
+          </div>
         </div>
         <div className="flex gap-1">
           {STEP_META.map((s) => {
@@ -360,13 +417,13 @@ function Stepper({
             return (
               <span
                 key={s.key}
-                className={`h-1.5 w-6 rounded-full ${
-                  state === "current"
-                    ? "bg-gradient-to-r from-accent to-accent2"
-                    : state === "done"
-                    ? "bg-accent"
-                    : "bg-line"
-                }`}
+                className="h-2 w-6"
+                style={{
+                  backgroundColor:
+                    state === "current" ? "#ff4d4d" : state === "done" ? "#2d2d2d" : "#e5e0d8",
+                  border: "1px solid #2d2d2d",
+                  borderRadius: "8px 3px 8px 3px / 3px 8px 3px 8px",
+                }}
               />
             );
           })}
@@ -377,40 +434,56 @@ function Stepper({
 }
 
 /* ------------------------------------------------------------------ */
-/* Step 1 — Search                                                     */
+/* Step 1 — Search                                                      */
 /* ------------------------------------------------------------------ */
 
 function StepSearch({ onStart }: { onStart: () => void }) {
   return (
-    <div className="mx-auto max-w-2xl text-center py-6 md:py-12">
-      <div className="inline-flex items-center gap-2 chip mb-5">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Step 1 · Prospecting
-      </div>
-      <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-        Find companies that could use a better website.
+    <div className="relative mx-auto max-w-3xl text-center py-4 md:py-8">
+      <span className="tag">01 · prospecting</span>
+
+      <h2 className="font-display font-bold text-[44px] md:text-[60px] leading-[1.02] mt-6">
+        Find businesses that
+        <br />
+        need{" "}
+        <span className="underline-doodle text-accent">a better</span>{" "}
+        website
+        <span className="inline-block ml-1 text-accent animate-bang-spin" style={{ transformOrigin: "50% 80%" }}>
+          !
+        </span>
       </h2>
-      <p className="mt-4 text-muted text-sm md:text-base leading-relaxed">
-        We query Crustdata with your heuristics, score every company, and surface the top
-        candidates. You stay in control of what happens next.
+
+      <p className="mt-6 text-[18px] md:text-[20px] text-ink/80 max-w-2xl mx-auto leading-relaxed">
+        We scour Crustdata with your heuristics, scribble a score on every company, and
+        hand you the pick of the litter. You stay the boss.
       </p>
-      <div className="mt-8 flex flex-col items-center gap-3">
+
+      <div className="mt-10 inline-flex flex-col items-center relative">
         <button className="btn btn-primary btn-lg" onClick={onStart}>
           Start search →
         </button>
-        <div className="text-[11px] text-muted">
-          Edit filters in <code className="text-white/70">lib/heuristics.ts</code>
+        <HandArrow className="hidden md:block absolute -left-36 -top-3 w-36 h-24 -rotate-6" />
+        <div className="mt-4 text-[14px] text-ink/55">
+          heuristics live in <code>lib/heuristics.ts</code>
         </div>
       </div>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
+      <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { t: "Search", d: "Crustdata API + custom heuristics." },
-          { t: "Build", d: "Claude Opus 4.7 generates landing pages." },
-          { t: "Send", d: "Personalized outreach emails, drafted or sent." },
-        ].map((x) => (
-          <div key={x.t} className="card p-4">
-            <div className="text-xs uppercase tracking-wider text-accent">{x.t}</div>
-            <div className="mt-1 text-sm text-white/80">{x.d}</div>
+          { n: "01", t: "Search", d: "Crustdata + your hand-tuned heuristics." },
+          { n: "02", t: "Build", d: "Claude Opus 4.7 sketches each landing page." },
+          { n: "03", t: "Send", d: "Personal outreach emails with preview attached." },
+        ].map((x, i) => (
+          <div
+            key={x.t}
+            className={`card card-sticky p-6 relative ${
+              i === 1 ? "md:translate-y-3 md:rotate-1" : i === 0 ? "md:-rotate-2" : "md:rotate-2"
+            }`}
+          >
+            <span className="tape" />
+            <div className="font-display font-bold text-accent text-[28px]">{x.n}</div>
+            <div className="font-display font-bold text-[22px] mt-1">{x.t}</div>
+            <div className="mt-2 text-[16px] text-ink/80 leading-snug">{x.d}</div>
           </div>
         ))}
       </div>
@@ -419,7 +492,7 @@ function StepSearch({ onStart }: { onStart: () => void }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Step 2 — Ranked                                                     */
+/* Step 2 — Ranked                                                      */
 /* ------------------------------------------------------------------ */
 
 function StepRanked({
@@ -437,29 +510,31 @@ function StepRanked({
 }) {
   return (
     <div>
-      <StickyActionBar
-        title={`Top ${ranked.length} prospects`}
-        subtitle="Select which companies to generate landing pages for."
+      <ActionBar
+        eyebrow="02 · pick"
+        title={`${ranked.length} prospects on the board`}
+        subtitle="Circle the ones you'd like to pitch. We'll build them landing pages next."
+        backLabel="back to search"
         onBack={onBack}
-        backLabel="Back to search"
         primary={
-          <button
-            className="btn btn-primary"
-            onClick={onNext}
-            disabled={picked.size === 0}
-          >
-            Generate {picked.size} website{picked.size === 1 ? "" : "s"} →
+          <button className="btn btn-accent" onClick={onNext} disabled={picked.size === 0}>
+            Build {picked.size} page{picked.size === 1 ? "" : "s"} →
           </button>
         }
       />
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {ranked.map((c) => (
-          <CompanyCard
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {ranked.map((c, i) => (
+          <div
             key={c.id}
-            c={c}
-            selected={picked.has(c.id)}
-            onToggle={() => onToggle(c.id)}
-          />
+            style={{ transform: `rotate(${(i % 3 - 1) * 0.6}deg)` }}
+            className="transition-transform hover:!rotate-0"
+          >
+            <CompanyCard
+              c={c}
+              selected={picked.has(c.id)}
+              onToggle={() => onToggle(c.id)}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -467,7 +542,7 @@ function StepRanked({
 }
 
 /* ------------------------------------------------------------------ */
-/* Step 3 — Generated                                                  */
+/* Step 3 — Generated                                                   */
 /* ------------------------------------------------------------------ */
 
 function StepGenerated({
@@ -486,29 +561,31 @@ function StepGenerated({
   const okCount = pages.filter((p) => !p.error).length;
   return (
     <div>
-      <StickyActionBar
-        title={`${okCount} landing pages ready`}
-        subtitle="Review each page, then pick which to pitch."
+      <ActionBar
+        eyebrow="03 · review"
+        title={`${okCount} pages wet with ink`}
+        subtitle="Eyeball each one. Uncheck any that look off before we send them."
+        backLabel="back to picks"
         onBack={onBack}
-        backLabel="Back to prospects"
         primary={
-          <button
-            className="btn btn-primary"
-            onClick={onNext}
-            disabled={picked.size === 0}
-          >
+          <button className="btn btn-accent" onClick={onNext} disabled={picked.size === 0}>
             Send {picked.size} email{picked.size === 1 ? "" : "s"} →
           </button>
         }
       />
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {pages.map((p) => (
-          <PagePreview
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {pages.map((p, i) => (
+          <div
             key={p.id}
-            page={p}
-            selected={picked.has(p.id)}
-            onToggle={() => onToggle(p.id)}
-          />
+            style={{ transform: `rotate(${((i % 3) - 1) * 0.5}deg)` }}
+            className="transition-transform hover:!rotate-0"
+          >
+            <PagePreview
+              page={p}
+              selected={picked.has(p.id)}
+              onToggle={() => onToggle(p.id)}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -516,7 +593,7 @@ function StepGenerated({
 }
 
 /* ------------------------------------------------------------------ */
-/* Step 4 — Sent                                                       */
+/* Step 4 — Sent                                                        */
 /* ------------------------------------------------------------------ */
 
 function StepSent({
@@ -532,57 +609,56 @@ function StepSent({
 
   return (
     <div>
-      <div className="card p-6 md:p-8 text-center">
-        <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-br from-accent to-accent2 text-white text-2xl mb-4 shadow-glow">
-          ✓
-        </div>
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Outreach complete
+      <div className="card p-8 md:p-10 text-center relative" style={{ transform: "rotate(-0.4deg)" }}>
+        <span className="thumbtack" />
+        <span className="tag">04 · sent</span>
+        <h2 className="font-display font-bold text-[40px] md:text-[52px] mt-4 leading-tight">
+          That's a wrap<span className="text-accent">!</span>
         </h2>
-        <p className="text-muted text-sm mt-1">
-          {results.length} campaign{results.length === 1 ? "" : "s"} processed.
+        <p className="text-ink/75 text-[17px] mt-2">
+          {results.length} campaign{results.length === 1 ? "" : "s"} pushed down the pipe.
         </p>
 
-        <div className="mt-6 grid grid-cols-3 gap-3 max-w-md mx-auto">
-          <Stat n={sent} label="Sent" tone="success" />
-          <Stat n={drafted} label="Drafted" tone="warn" />
-          <Stat n={errored} label="Errored" tone="danger" />
+        <div className="mt-8 grid grid-cols-3 gap-4 max-w-lg mx-auto">
+          <Stat n={sent} label="sent" tone="success" rot={-2} />
+          <Stat n={drafted} label="drafted" tone="warn" rot={1.5} />
+          <Stat n={errored} label="errored" tone="danger" rot={-1} />
         </div>
 
-        <div className="mt-6 flex justify-center">
+        <div className="mt-8 flex justify-center">
           <button className="btn btn-primary btn-lg" onClick={onStartOver}>
-            Start over
+            Start a new batch →
           </button>
         </div>
       </div>
 
-      <div className="mt-6 card">
-        <div className="px-5 py-3 border-b border-line text-[11px] uppercase tracking-wider text-muted">
-          Per-recipient results
+      <div className="mt-8 card p-0">
+        <div className="px-6 py-4 border-b-2 border-dashed border-ink/25 flex items-center justify-between">
+          <span className="tag">per recipient</span>
         </div>
-        <ul className="divide-y divide-line">
+        <ul className="divide-y-2 divide-dashed divide-ink/15">
           {results.map((r) => (
-            <li key={r.id} className="px-5 py-4 flex items-start justify-between gap-4">
+            <li key={r.id} className="px-6 py-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="font-medium">{r.companyName}</div>
-                <div className="text-xs text-muted mt-0.5">
+                <div className="font-display font-bold text-[19px] leading-tight">{r.companyName}</div>
+                <div className="text-[14px] text-ink/70 mt-0.5">
                   {r.recipient?.name
                     ? `${r.recipient.name} · ${r.recipient.title ?? ""}`
                     : "(no contact)"}{" "}
                   {r.recipient?.email ? `· ${r.recipient.email}` : ""}
                 </div>
                 {r.subject && (
-                  <div className="text-xs mt-1 italic text-white/70">“{r.subject}”</div>
+                  <div className="text-[14px] mt-1 italic text-ink/75">
+                    "{r.subject}"
+                  </div>
                 )}
               </div>
-              <div className="text-right text-xs whitespace-nowrap flex flex-col items-end gap-1 shrink-0">
+              <div className="flex flex-col items-end gap-1 shrink-0">
                 {r.sent && <span className="chip chip-success">sent</span>}
                 {r.redirectedTo && (
                   <span className="chip chip-info">dev → {r.redirectedTo}</span>
                 )}
-                {r.savedEml && (
-                  <span className="chip chip-warn">drafted</span>
-                )}
+                {r.savedEml && <span className="chip chip-warn">drafted</span>}
                 {r.error && <span className="chip chip-danger">{r.error}</span>}
               </div>
             </li>
@@ -597,52 +673,64 @@ function Stat({
   n,
   label,
   tone,
+  rot,
 }: {
   n: number;
   label: string;
   tone: "success" | "warn" | "danger";
+  rot: number;
 }) {
-  const color =
-    tone === "success"
-      ? "text-emerald-300"
-      : tone === "warn"
-      ? "text-amber-300"
-      : "text-rose-300";
+  const bg =
+    tone === "success" ? "#d9edd9" : tone === "warn" ? "#fbeecb" : "#ffd9d9";
   return (
-    <div className="rounded-lg border border-line bg-ink/40 py-3">
-      <div className={`text-2xl font-bold ${color}`}>{n}</div>
-      <div className="text-[11px] uppercase tracking-wider text-muted mt-0.5">{label}</div>
+    <div
+      className="p-5 border-[3px] border-ink"
+      style={{
+        background: bg,
+        borderRadius: "52% 48% 46% 54% / 54% 48% 52% 46%",
+        boxShadow: "4px 4px 0 0 #2d2d2d",
+        transform: `rotate(${rot}deg)`,
+      }}
+    >
+      <div className="font-display font-bold text-[38px] leading-none">{n}</div>
+      <div className="font-display font-bold text-[13px] mt-1 uppercase tracking-wide text-ink/70">
+        {label}
+      </div>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Loading states                                                      */
+/* Loading states                                                       */
 /* ------------------------------------------------------------------ */
 
 function LoadingSearch() {
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <div className="spinner" />
         <div>
-          <div className="font-semibold">Searching Crustdata…</div>
-          <div className="text-xs text-muted">Scoring candidates against your heuristics.</div>
+          <div className="font-display font-bold text-[22px]">Poking Crustdata…</div>
+          <div className="text-[15px] text-ink/70">Scoring candidates against your heuristics.</div>
         </div>
       </div>
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="card p-5">
-            <div className="skeleton h-4 w-2/3" />
-            <div className="skeleton h-3 w-1/2 mt-3" />
+          <div
+            key={i}
+            className="card p-5"
+            style={{ transform: `rotate(${((i % 3) - 1) * 0.6}deg)` }}
+          >
+            <div className="skeleton h-5 w-2/3" />
+            <div className="skeleton h-4 w-1/2 mt-3" />
             <div className="mt-5 flex gap-2">
-              <div className="skeleton h-5 w-14" />
-              <div className="skeleton h-5 w-12" />
-              <div className="skeleton h-5 w-16" />
+              <div className="skeleton h-6 w-14" />
+              <div className="skeleton h-6 w-12" />
+              <div className="skeleton h-6 w-16" />
             </div>
-            <div className="skeleton h-3 w-full mt-5" />
-            <div className="skeleton h-3 w-5/6 mt-2" />
-            <div className="skeleton h-3 w-4/6 mt-2" />
+            <div className="skeleton h-4 w-full mt-5" />
+            <div className="skeleton h-4 w-5/6 mt-2" />
+            <div className="skeleton h-4 w-4/6 mt-2" />
           </div>
         ))}
       </div>
@@ -653,28 +741,32 @@ function LoadingSearch() {
 function LoadingGenerate({ count }: { count: number }) {
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <div className="spinner" />
         <div>
-          <div className="font-semibold">
-            Generating {count} landing page{count === 1 ? "" : "s"}…
+          <div className="font-display font-bold text-[22px]">
+            Sketching {count} landing page{count === 1 ? "" : "s"}…
           </div>
-          <div className="text-xs text-muted">
-            Claude Opus 4.7 is writing HTML in parallel — this takes ~30 seconds.
+          <div className="text-[15px] text-ink/70">
+            Claude Opus 4.7 is scribbling in parallel — about 30 seconds.
           </div>
         </div>
       </div>
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: Math.max(count, 3) }).map((_, i) => (
-          <div key={i} className="card overflow-hidden">
-            <div className="p-3.5 border-b border-line flex items-center gap-2.5">
-              <div className="skeleton h-8 w-8 rounded-md" />
+          <div
+            key={i}
+            className="card overflow-hidden p-0"
+            style={{ transform: `rotate(${((i % 3) - 1) * 0.6}deg)` }}
+          >
+            <div className="p-4 border-b-2 border-dashed border-ink/25 flex items-center gap-3">
+              <div className="skeleton h-9 w-9" style={{ borderRadius: "50%" }} />
               <div className="flex-1">
-                <div className="skeleton h-3 w-2/3" />
-                <div className="skeleton h-2.5 w-1/2 mt-2" />
+                <div className="skeleton h-4 w-2/3" />
+                <div className="skeleton h-3 w-1/2 mt-2" />
               </div>
             </div>
-            <div className="skeleton" style={{ aspectRatio: "16/10", borderRadius: 0 }} />
+            <div className="skeleton rounded-none" style={{ aspectRatio: "16/10", border: "none", borderRadius: 0 }} />
           </div>
         ))}
       </div>
@@ -684,54 +776,59 @@ function LoadingGenerate({ count }: { count: number }) {
 
 function LoadingSend({ count }: { count: number }) {
   return (
-    <div className="py-12 flex flex-col items-center text-center">
+    <div className="py-16 flex flex-col items-center text-center">
       <div className="spinner" />
-      <div className="mt-4 font-semibold text-lg">
-        Sending {count} email{count === 1 ? "" : "s"}…
+      <div className="mt-5 font-display font-bold text-[26px] leading-tight">
+        Stuffing {count} envelope{count === 1 ? "" : "s"}…
       </div>
-      <div className="text-xs text-muted mt-1">
-        Attaching screenshots and personalizing copy.
+      <div className="text-[15px] text-ink/70 mt-1">
+        Attaching previews and personalizing copy.
       </div>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Shared pieces                                                       */
+/* Shared                                                               */
 /* ------------------------------------------------------------------ */
 
-function StickyActionBar({
+function ActionBar({
+  eyebrow,
   title,
   subtitle,
-  onBack,
   backLabel,
+  onBack,
   primary,
 }: {
+  eyebrow: string;
   title: string;
   subtitle?: string;
-  onBack: () => void;
   backLabel: string;
+  onBack: () => void;
   primary: React.ReactNode;
 }) {
   return (
-    <div className="sticky top-0 z-20 -mx-5 md:-mx-8 px-5 md:px-8 py-3.5
-                    bg-ink/70 backdrop-blur border-b border-line">
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-xs text-muted flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onBack}
-              className="text-white/70 hover:text-white transition"
-            >
-              ← {backLabel}
-            </button>
-          </div>
-          <div className="font-semibold truncate">{title}</div>
-          {subtitle && <div className="text-xs text-muted truncate">{subtitle}</div>}
+    <div className="card p-5 md:p-6 flex items-start md:items-center justify-between gap-4 flex-wrap" style={{ transform: "rotate(-0.3deg)" }}>
+      <span className="tape" />
+      <div className="min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-[14px] text-ink/70 hover:text-accent transition underline decoration-dashed underline-offset-4"
+        >
+          ← {backLabel}
+        </button>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <span className="tag">{eyebrow}</span>
+          <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight">
+            {title}
+          </h2>
         </div>
-        <div className="shrink-0">{primary}</div>
+        {subtitle && (
+          <p className="text-[15px] text-ink/75 mt-1.5">{subtitle}</p>
+        )}
       </div>
+      <div className="shrink-0">{primary}</div>
     </div>
   );
 }
@@ -761,7 +858,7 @@ function ConfigPanel({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label className="lbl">Price offered (USD)</label>
+        <label className="lbl">price offered (USD)</label>
         <input
           className="field"
           type="number"
@@ -770,7 +867,7 @@ function ConfigPanel({
         />
       </div>
       <div>
-        <label className="lbl">Payment details</label>
+        <label className="lbl">payment details</label>
         <input
           className="field"
           value={paymentDetails}
@@ -778,15 +875,15 @@ function ConfigPanel({
         />
       </div>
       <div>
-        <label className="lbl">Your name (freelancer)</label>
+        <label className="lbl">your name</label>
         <input className="field" value={fromName} onChange={(e) => setFromName(e.target.value)} />
       </div>
       <div>
-        <label className="lbl">Your email (from address)</label>
+        <label className="lbl">your email</label>
         <input className="field" value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} />
       </div>
       <div className="md:col-span-2 flex justify-end">
-        <button className="btn btn-primary" onClick={save}>
+        <button className="btn btn-accent" onClick={save}>
           Save
         </button>
       </div>

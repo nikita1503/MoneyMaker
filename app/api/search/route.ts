@@ -18,18 +18,29 @@ export async function POST(req: Request) {
     const maxPages = Number(body.maxPages ?? MAX_PAGES);
     const filters = body.filters ?? STEP1_FILTERS;
 
-    // Walk pages sequentially. Crustdata is 1-indexed; parallel fan-out
-    // occasionally rate-limits and the .catch would hide that silently.
+    // Walk pages sequentially. Crustdata is 1-indexed and occasionally
+    // times out on deep pages — retry once, then skip that page and keep
+    // going. Two consecutive empty pages is our stop signal.
     const all: any[] = [];
     const pageErrors: string[] = [];
+    let consecutiveEmpty = 0;
     for (let i = 1; i <= maxPages; i++) {
-      try {
-        const batch = await searchCompanies(filters, i);
+      let batch: any[] | null = null;
+      for (let attempt = 0; attempt < 2 && batch === null; attempt++) {
+        try {
+          batch = await searchCompanies(filters, i);
+        } catch (e: any) {
+          const msg = `page ${i} attempt ${attempt + 1}: ${String(e.message ?? e).slice(0, 160)}`;
+          pageErrors.push(msg);
+          if (attempt === 1) batch = [];
+        }
+      }
+      if (!batch || batch.length === 0) {
+        consecutiveEmpty++;
+        if (consecutiveEmpty >= 2) break;
+      } else {
+        consecutiveEmpty = 0;
         all.push(...batch);
-        if (batch.length === 0) break; // out of results
-      } catch (e: any) {
-        pageErrors.push(`page ${i}: ${String(e.message ?? e).slice(0, 200)}`);
-        break;
       }
     }
     const ranked = rankCompanies(all, topN);

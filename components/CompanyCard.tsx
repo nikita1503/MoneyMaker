@@ -19,38 +19,40 @@ export function CompanyCard({
     <button
       onClick={onToggle}
       aria-pressed={selected}
-      className={`group relative card p-5 text-left transition-all duration-200
-        hover:-translate-y-0.5 hover:border-white/20
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60
-        ${selected ? "ring-2 ring-accent border-transparent shadow-glow" : ""}`}
+      className="group relative card p-5 text-left w-full transition-transform duration-100 hover:-rotate-1"
+      style={{
+        background: selected ? "#fff9c4" : "#ffffff",
+        boxShadow: selected ? "6px 6px 0 0 #2d2d2d" : "4px 4px 0 0 #2d2d2d",
+      }}
     >
-      {selected && (
-        <span
-          className="absolute top-3 right-3 inline-flex items-center justify-center
-                     h-6 w-6 rounded-full bg-gradient-to-br from-accent to-accent2 text-white text-xs
-                     shadow-glow animate-pop-in"
-          aria-hidden
-        >
-          ✓
-        </span>
-      )}
+      {selected && <span className="thumbtack" aria-hidden />}
 
-      <div className="flex items-start justify-between gap-3 pr-7">
+      <div className="flex items-start justify-between gap-3 pr-2">
         <div className="min-w-0">
-          <div className="font-semibold truncate text-white">{c.name}</div>
-          <div className="text-xs text-muted truncate mt-0.5">
+          <div className="font-display font-bold text-[20px] leading-tight text-ink truncate">
+            {c.name}
+          </div>
+          <div className="text-[14px] text-ink/65 truncate mt-0.5">
             {c.industry ?? "—"} · {c.location ?? "—"}
           </div>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="text-[10px] uppercase tracking-wider text-muted">score</div>
-          <div className="text-2xl font-bold bg-gradient-to-br from-accent to-accent2 bg-clip-text text-transparent leading-none">
+        <div
+          className="shrink-0 h-14 w-14 flex flex-col items-center justify-center border-[3px] border-ink bg-paper"
+          style={{
+            borderRadius: "52% 48% 46% 54% / 54% 48% 52% 46%",
+            boxShadow: "3px 3px 0 0 #2d2d2d",
+            transform: "rotate(-4deg)",
+          }}
+          aria-hidden
+        >
+          <div className="font-display font-bold text-[22px] leading-none text-accent">
             {c.score}
           </div>
+          <div className="text-[9px] uppercase tracking-wider text-ink/60 mt-0.5">score</div>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className="mt-4 flex flex-wrap gap-2">
         {c.employee_count ? <span className="chip">{c.employee_count} emp</span> : null}
         {c.founded_year ? <span className="chip">est. {c.founded_year}</span> : null}
         <span className="chip">rev ≤ {revLabel}</span>
@@ -58,18 +60,30 @@ export function CompanyCard({
       </div>
 
       {c.reasons.length > 0 && (
-        <ul className="mt-4 space-y-1 text-[11.5px] text-white/65">
+        <ul className="mt-4 space-y-1.5 text-[15px] text-ink/85 leading-snug">
           {c.reasons.slice(0, 4).map((r, i) => (
-            <li key={i} className="flex gap-2 leading-snug">
-              <span className="text-accent/70 shrink-0">•</span>
+            <li key={i} className="flex gap-2">
+              <span className="text-accent shrink-0">›</span>
               <span>{r}</span>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="mt-4 pt-3 border-t border-line/70 text-[11px] text-muted">
-        {selected ? "Selected — click to deselect" : "Click to select"}
+      <div className="mt-4 pt-3 border-t-2 border-dashed border-ink/25 text-[13px] text-ink/70 flex items-center justify-between">
+        <span>{selected ? "picked — click to drop" : "click to pick"}</span>
+        <span
+          className={`inline-flex items-center justify-center h-6 w-6 border-2 border-ink ${
+            selected ? "bg-accent text-white" : "bg-white"
+          }`}
+          style={{
+            borderRadius: "52% 48% 46% 54% / 54% 48% 52% 46%",
+            boxShadow: "2px 2px 0 0 #2d2d2d",
+          }}
+          aria-hidden
+        >
+          {selected ? "✓" : ""}
+        </span>
       </div>
     </button>
   );
