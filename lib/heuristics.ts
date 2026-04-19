@@ -27,7 +27,19 @@ export const TOP_N = 8;
 // LinkedIn pages used as homepage, builder default subdomains, dev-hosting URLs
 // that shouldn't be a production homepage. Keep lowercased.
 const PLACEHOLDER_HOSTS = [
+  // Social / link-in-bio used as homepage
   "linkedin.com",
+  "linktr.ee",
+  "beacons.ai",
+  "about.me",
+  "ycombinator.com",
+  // Link shorteners — no real site if the homepage is a shortener
+  "bit.ly",
+  "tinyurl.com",
+  "t.co",
+  "lnkd.in",
+  "rebrand.ly",
+  // No-code builders on their default subdomain
   "carrd.co",
   "strikingly.com",
   "wix.com",
@@ -43,6 +55,7 @@ const PLACEHOLDER_HOSTS = [
   "framer.website",
   "framer.ai",
   "bubble.io",
+  // Dev-hosting defaults that shouldn't be a production homepage
   "github.io",
   "gitbook.io",
   "herokuapp.com",
@@ -53,7 +66,6 @@ const PLACEHOLDER_HOSTS = [
   "glitch.me",
   "pages.dev",
   "onrender.com",
-  "ycombinator.com",
 ];
 
 // True when the company's public "website" is missing, a placeholder, or a
@@ -146,8 +158,18 @@ export function scoreCompany(c: SearchCompany): { score: number; reasons: string
 }
 
 export function rankCompanies(companies: SearchCompany[], topN = TOP_N): RankedCompany[] {
+  // Paginated searches can return the same company twice; dedupe on
+  // linkedin_company_id (or falling back to normalised name).
+  const seen = new Set<string>();
+  const unique: SearchCompany[] = [];
+  for (const c of companies) {
+    const key = c.linkedin_company_id || (c.name ?? "").toLowerCase().trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    unique.push(c);
+  }
   // Hard filter: only companies that look like they don't have a real website.
-  const needSite = companies.filter(hasNoRealWebsite);
+  const needSite = unique.filter(hasNoRealWebsite);
   return needSite
     .map((c, i) => {
       const { score, reasons } = scoreCompany(c);

@@ -114,7 +114,7 @@ export async function POST(req: Request) {
           return {
             id: c.id,
             companyName: c.name,
-            recipient: contact,
+            recipient: contact ?? undefined,
             subject: email.subject,
             body: email.text,
             sent: send.sent,

@@ -9,7 +9,7 @@ export const maxDuration = 120;
 // How many pages to pull from Crustdata before we rank. The post-filter
 // "no real website" can drop the majority of rows, so we walk a few pages
 // to give rankCompanies a healthy candidate pool.
-const MAX_PAGES = 5;
+const MAX_PAGES = 10;
 
 export async function POST(req: Request) {
   try {
