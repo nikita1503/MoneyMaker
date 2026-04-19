@@ -5,12 +5,12 @@
   "scripts": {
     "dev": "next dev -p 3737",
     "build": "next build",
-    "start": "next start -p 3737",
+    "start": "next start -p ${PORT:-3737}",
     "lint": "next lint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
-    "next": "14.2.15",
+    "next": "^14.2.35",
     "nodemailer": "^6.9.15",
     "puppeteer": "^23.5.0",
     "react": "^18.3.1",
