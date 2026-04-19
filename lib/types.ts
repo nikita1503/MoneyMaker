@@ -68,6 +68,7 @@ export type OutreachResult = {
   body?: string;
   sent?: boolean;
   savedEml?: string;
+  redirectedTo?: string;
   error?: string;
 };
 

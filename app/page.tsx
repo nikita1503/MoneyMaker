@@ -213,6 +213,7 @@ export default function Dashboard() {
                 </div>
                 <div className="text-right text-xs whitespace-nowrap">
                   {r.sent && <span className="chip text-green-400 border-green-800/60">sent</span>}
+                  {r.redirectedTo && <span className="chip text-sky-300 border-sky-800/60">dev → {r.redirectedTo}</span>}
                   {r.savedEml && <span className="chip text-amber-300 border-amber-800/60">drafted → {r.savedEml}</span>}
                   {r.error && <span className="chip text-red-400 border-red-900/60">{r.error}</span>}
                 </div>

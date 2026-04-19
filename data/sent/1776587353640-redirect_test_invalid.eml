@@ -1,0 +1,25 @@
+From: Tester <tester@test.invalid>
+To: redirect@test.invalid
+Subject: =?UTF-8?Q?=5BDEV_MODE_=E2=80=94_would_have_sent_to?=
+ =?UTF-8?Q?_real=40prospect=2Einvalid=5D_Mocked_lan?=
+ =?UTF-8?Q?ding_page_for_Prospect_Co?=
+Message-ID: <275f2d23-eb95-7ada-2283-c154a2b2b823@test.invalid>
+Date: Sun, 19 Apr 2026 08:29:13 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="--_NmP-b1e24344e8db1947-Part_1"
+
+----_NmP-b1e24344e8db1947-Part_1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+[DEV MODE =E2=80=94 would have sent to real@prospect.invalid]
+
+hello prospect
+----_NmP-b1e24344e8db1947-Part_1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<p><strong>[DEV MODE =E2=80=94 would have sent to real@prospect.=
+invalid]</strong></p><p>hello prospect</p>
+----_NmP-b1e24344e8db1947-Part_1--

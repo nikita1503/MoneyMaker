@@ -16,6 +16,22 @@ function smtpConfigured() {
   return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
+// Dev mode: if DEV_MODE_EMAIL is set, every outbound email is redirected
+// there and the real recipient is stamped into the subject + body so you
+// can verify the pipeline end-to-end without ever contacting real prospects.
+function devRedirect(opts: SendOpts): SendOpts {
+  const redirect = process.env.DEV_MODE_EMAIL?.trim();
+  if (!redirect) return opts;
+  const banner = `[DEV MODE — would have sent to ${opts.to}]`;
+  return {
+    ...opts,
+    to: redirect,
+    subject: `${banner} ${opts.subject}`,
+    text: `${banner}\n\n${opts.text}`,
+    html: opts.html ? `<p><strong>${banner}</strong></p>${opts.html}` : undefined,
+  };
+}
+
 function transporter() {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST!,
@@ -27,8 +43,10 @@ function transporter() {
 
 // If SMTP is configured: really send. Otherwise: serialize to a .eml file
 // the user can drag into any mail client. Returns { sent, savedEml }.
-export async function sendOrSave(opts: SendOpts): Promise<{ sent: boolean; savedEml?: string }> {
+export async function sendOrSave(rawOpts: SendOpts): Promise<{ sent: boolean; savedEml?: string; redirectedTo?: string }> {
   await fs.mkdir(SENT_DIR, { recursive: true });
+  const opts = devRedirect(rawOpts);
+  const redirectedTo = opts.to !== rawOpts.to ? opts.to : undefined;
 
   if (smtpConfigured()) {
     const info = await transporter().sendMail({
@@ -39,7 +57,7 @@ export async function sendOrSave(opts: SendOpts): Promise<{ sent: boolean; saved
       html: opts.html,
       attachments: opts.attachments,
     });
-    return { sent: !!info.messageId };
+    return { sent: !!info.messageId, redirectedTo };
   }
 
   // Offline fallback — build a MIME message and drop it on disk.
@@ -61,5 +79,5 @@ export async function sendOrSave(opts: SendOpts): Promise<{ sent: boolean; saved
     `${Date.now()}-${opts.to.replace(/[^a-z0-9]/gi, "_")}.eml`
   );
   await fs.writeFile(file, info.message as Buffer);
-  return { sent: false, savedEml: path.relative(process.cwd(), file) };
+  return { sent: false, savedEml: path.relative(process.cwd(), file), redirectedTo };
 }

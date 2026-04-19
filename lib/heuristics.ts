@@ -23,10 +23,74 @@ export const STEP1_FILTERS: SearchFilter[] = [
 
 export const TOP_N = 8;
 
+// Hosts that almost always mean "this company doesn't have a real website yet":
+// LinkedIn pages used as homepage, builder default subdomains, dev-hosting URLs
+// that shouldn't be a production homepage. Keep lowercased.
+const PLACEHOLDER_HOSTS = [
+  "linkedin.com",
+  "carrd.co",
+  "strikingly.com",
+  "wix.com",
+  "weebly.com",
+  "webnode.com",
+  "godaddysites.com",
+  "squarespace.com",
+  "notion.site",
+  "notion.so",
+  "substack.com",
+  "medium.com",
+  "webflow.io",
+  "framer.website",
+  "framer.ai",
+  "bubble.io",
+  "github.io",
+  "gitbook.io",
+  "herokuapp.com",
+  "vercel.app",
+  "netlify.app",
+  "firebaseapp.com",
+  "replit.app",
+  "glitch.me",
+  "pages.dev",
+  "onrender.com",
+  "ycombinator.com",
+];
+
+// True when the company's public "website" is missing, a placeholder, or a
+// LinkedIn URL used as a homepage — i.e. they need a real site.
+export function hasNoRealWebsite(c: SearchCompany): boolean {
+  const raw = (c.website ?? c.company_website_domain ?? "").trim();
+  if (!raw) return true;
+
+  // Strip protocol + path.
+  const host = raw
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .split("/")[0]
+    .toLowerCase();
+  if (!host) return true;
+
+  // Any LinkedIn or placeholder subdomain counts as no site.
+  if (PLACEHOLDER_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) return true;
+
+  // Crustdata sometimes returns the company's LinkedIn URL in `website` when
+  // they have nothing else.
+  const li = (c.linkedin_company_url ?? "").toLowerCase();
+  if (li && raw.toLowerCase().includes("linkedin.com")) return true;
+
+  return false;
+}
+
 // Step 2: score each company. Higher = better prospect.
+// Precondition: the caller has already dropped companies with real websites
+// via hasNoRealWebsite().
 export function scoreCompany(c: SearchCompany): { score: number; reasons: string[] } {
   let score = 0;
   const reasons: string[] = [];
+
+  // Always true at this point — record it so the UI shows why they're here.
+  reasons.push("no real website (or placeholder only)");
+  score += 25;
 
   // Funded but small → likely rushed their site.
   const maxRev = c.revenue_range?.estimatedMaxRevenue;
@@ -82,7 +146,9 @@ export function scoreCompany(c: SearchCompany): { score: number; reasons: string
 }
 
 export function rankCompanies(companies: SearchCompany[], topN = TOP_N): RankedCompany[] {
-  return companies
+  // Hard filter: only companies that look like they don't have a real website.
+  const needSite = companies.filter(hasNoRealWebsite);
+  return needSite
     .map((c, i) => {
       const { score, reasons } = scoreCompany(c);
       return {

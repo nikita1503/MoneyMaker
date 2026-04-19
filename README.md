@@ -60,7 +60,17 @@ Gmail drag-and-drop.
 | `SMTP_USER`      | `you@gmail.com`                      |
 | `SMTP_PASS`      | app-specific password                |
 | `SMTP_FROM`      | `"Alex <alex@gmail.com>"`            |
+| `DEV_MODE_EMAIL` | `you@gmail.com` — redirects all outbound mail here (blank = off) |
 | `PAYMENT_DETAILS`| `Paypal: alex@gmail.com | Stripe: …` |
+
+### Dev mode
+
+Set `DEV_MODE_EMAIL` in `.env.local` to any inbox you control. While it's set,
+every `/api/send` call — regardless of whether SMTP is configured — delivers
+to that address instead of the real prospect. The real intended recipient is
+prefixed into the subject line (`[DEV MODE — would have sent to jane@acme.com] …`)
+and the UI shows a `dev → your@inbox` chip on each result row. Clear the
+variable and restart `npm run dev` to go live.
 
 Runtime config (price, freelancer name/email, payment details) is editable
 from the ⚙︎ **Config** drawer in the UI and persisted to `data/config.json`.

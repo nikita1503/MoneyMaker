@@ -76,13 +76,22 @@ Hard requirements:
 
   const res = await client().messages.create({
     model: MODEL,
-    max_tokens: 16000,
+    max_tokens: 32000,
     system: sys,
     messages: [{ role: "user", content: user }],
   });
   const raw = textOf(res).trim();
   // Defensive strip in case the model still wraps in fences.
-  return raw.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "");
+  const cleaned = raw.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "");
+  if (!/<\/html>/i.test(cleaned)) {
+    // Model hit max_tokens and didn't close the document. Auto-close so the
+    // output is still renderable rather than a broken fragment.
+    console.warn(
+      `renderLandingHtml: output missing </html> (len=${cleaned.length}, stop=${res.stop_reason}). Auto-closing.`
+    );
+    return cleaned + "\n</body>\n</html>\n";
+  }
+  return cleaned;
 }
 
 function textOf(res: Anthropic.Message): string {

@@ -51,7 +51,10 @@ export async function enrichCompany(opts: {
   else if (opts.companyId) qs.set("company_id", String(opts.companyId));
   else throw new Error("enrichCompany: need domain, name, or companyId");
   if (opts.realtime) qs.set("enrich_realtime", "True");
-  qs.set("fields", "job_openings,news_articles,funding_and_investment,web_traffic,tech_stack");
+  // Intentionally not passing `fields` — the default payload already returns the
+  // firmographics + headcount + revenue bounds we need, and the opt-in field list
+  // is picky (some names in the docs, e.g. `tech_stack`, are rejected by the live
+  // API). Keep it minimal.
 
   const res = await fetch(`${BASE}/screener/company?${qs.toString()}`, {
     headers: headers(),
@@ -71,9 +74,12 @@ export function guessDomain(c: SearchCompany): string | undefined {
   return undefined;
 }
 
-// People search — used to find the founder / highest-rank contact for outreach
+// People search — used to find the founder / highest-rank contact for outreach.
+// Endpoint is singular `/screener/person/search`. Live-verified valid
+// filter_types include: CURRENT_COMPANY, CURRENT_TITLE, SENIORITY_LEVEL, …
+// (not `TITLE`, not `CURRENT_COMPANY_LINKEDIN_ID` — those 400).
 export async function searchPeople(body: Record<string, any>): Promise<any[]> {
-  const res = await fetch(`${BASE}/screener/people/search`, {
+  const res = await fetch(`${BASE}/screener/person/search`, {
     method: "POST",
     headers: headers({ "Content-Type": "application/json" }),
     body: JSON.stringify(body),
@@ -83,52 +89,70 @@ export async function searchPeople(body: Record<string, any>): Promise<any[]> {
     throw new Error(`crustdata people ${res.status}: ${t.slice(0, 400)}`);
   }
   const data = await res.json();
-  // Response shape varies; try common containers.
-  return (data.profiles ?? data.people ?? data.results ?? []) as any[];
+  return (data.profiles ?? []) as any[];
 }
 
-// Best-effort: find a founder or top-rank contact at a company.
-// Crustdata people search is versioned — if a filter shape fails we degrade.
+function pickEmail(p: any): string | undefined {
+  // Profile shape: `emails: string[]` (usually empty unless enriched).
+  if (Array.isArray(p.emails) && p.emails.length) return p.emails[0];
+  // Very old schema fallbacks.
+  return p.email ?? p.business_email ?? p.personal_email;
+}
+
+function pickTitle(p: any): string | undefined {
+  return p.current_title ?? p.default_position_title ?? p.headline ?? p.title;
+}
+
+// Best-effort: find the founder or top-rank contact at a company.
+// Returns `null` only when the search endpoint itself throws or returns 0 rows.
+// Returns `{name, title}` without `email` when Crustdata has the profile but no
+// email attached — the caller then decides whether to skip or dev-redirect.
 export async function findTopContact(opts: {
   companyName?: string;
   linkedinCompanyId?: string;
   domain?: string;
 }): Promise<{ name?: string; email?: string; title?: string } | null> {
-  const attempts: Record<string, any>[] = [];
+  if (!opts.companyName) return null;
 
-  if (opts.linkedinCompanyId) {
-    attempts.push({
-      filters: [
-        { filter_type: "CURRENT_COMPANY_LINKEDIN_ID", type: "in", value: [opts.linkedinCompanyId] },
-        { filter_type: "TITLE", type: "in", value: ["CEO", "Founder", "Co-Founder", "Chief Executive Officer"] },
-      ],
-      page: 1,
-    });
-  }
-  if (opts.companyName) {
-    attempts.push({
+  const queries: Record<string, any>[] = [
+    // 1. Same company + founder/CEO title — the ideal prospect.
+    {
       filters: [
         { filter_type: "CURRENT_COMPANY", type: "in", value: [opts.companyName] },
-        { filter_type: "TITLE", type: "in", value: ["CEO", "Founder"] },
+        { filter_type: "CURRENT_TITLE", type: "in", value: ["CEO", "Founder", "Co-Founder", "Chief Executive Officer", "Co-founder"] },
       ],
       page: 1,
-    });
-  }
+    },
+    // 2. Fall back to any decision-maker at the company.
+    {
+      filters: [
+        { filter_type: "CURRENT_COMPANY", type: "in", value: [opts.companyName] },
+        { filter_type: "SENIORITY_LEVEL", type: "in", value: ["Founder", "CXO", "Partner"] },
+      ],
+      page: 1,
+    },
+    // 3. Last resort — anyone at the company.
+    {
+      filters: [{ filter_type: "CURRENT_COMPANY", type: "in", value: [opts.companyName] }],
+      page: 1,
+    },
+  ];
 
-  for (const body of attempts) {
+  for (const body of queries) {
     try {
       const people = await searchPeople(body);
       if (people.length === 0) continue;
-      // Prefer someone with an email.
-      const withEmail = people.find((p) => p.email || p.business_email || p.personal_email);
-      const pick = withEmail ?? people[0];
+      // Prefer someone with an email if any.
+      const withEmail = people.find((p) => pickEmail(p));
+      const decisionMaker = people.find((p) => p.default_position_is_decision_maker);
+      const pick = withEmail ?? decisionMaker ?? people[0];
       return {
         name: pick.name ?? pick.full_name,
-        email: pick.email ?? pick.business_email ?? pick.personal_email,
-        title: pick.title ?? pick.current_title ?? pick.headline,
+        email: pickEmail(pick),
+        title: pickTitle(pick),
       };
     } catch {
-      // Try next attempt
+      // Try next shape.
     }
   }
   return null;

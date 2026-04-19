@@ -1,0 +1,20 @@
+From: Tester <tester@test.invalid>
+To: real@prospect.invalid
+Subject: Mocked landing page for Prospect Co
+Message-ID: <61132bdf-c838-4526-4ed7-17976dc4f76b@test.invalid>
+Date: Sun, 19 Apr 2026 08:30:34 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="--_NmP-f73222e7194a0aeb-Part_1"
+
+----_NmP-f73222e7194a0aeb-Part_1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+hello prospect
+----_NmP-f73222e7194a0aeb-Part_1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+<p>hello prospect</p>
+----_NmP-f73222e7194a0aeb-Part_1--

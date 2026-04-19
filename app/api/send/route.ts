@@ -81,7 +81,12 @@ export async function POST(req: Request) {
             paymentDetails: config.paymentDetails,
           });
 
-          if (!contact?.email) {
+          // Crustdata often ships profile metadata with an empty `emails`
+          // array. If the user has DEV_MODE_EMAIL set, we still generate the
+          // .eml — addressed to the dev inbox with a banner noting the real
+          // prospect was unreachable. In real (non-dev) mode we bail cleanly.
+          const devInbox = process.env.DEV_MODE_EMAIL?.trim();
+          if (!contact?.email && !devInbox) {
             return {
               id: c.id,
               companyName: c.name,
@@ -93,8 +98,10 @@ export async function POST(req: Request) {
             };
           }
 
+          const toAddress = contact?.email ?? `no-contact+${c.id}@example.invalid`;
+
           const send = await sendOrSave({
-            to: contact.email,
+            to: toAddress,
             from: `${config.fromName} <${config.fromEmail}>`,
             subject: email.subject,
             text: email.text,
@@ -112,6 +119,7 @@ export async function POST(req: Request) {
             body: email.text,
             sent: send.sent,
             savedEml: send.savedEml,
+            redirectedTo: send.redirectedTo,
           };
         } catch (e: any) {
           return {
