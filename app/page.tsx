@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { CompanyCard } from "@/components/CompanyCard";
 import { PagePreview } from "@/components/PagePreview";
+import { FilterPanel, EMPTY_FILTERS, type SearchFilters } from "@/components/FilterPanel";
 import type { AppConfig, LandingPage, OutreachResult, RankedCompany } from "@/lib/types";
 
 type Step = "idle" | "searching" | "ranked" | "generating" | "generated" | "sending" | "sent";
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const [configOpen, setConfigOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [log, setLog] = useState<string[]>([]);
+  const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
 
   const say = (m: string) =>
     setLog((l) => [...l.slice(-30), `${new Date().toLocaleTimeString()} — ${m}`]);
@@ -57,7 +59,18 @@ export default function Dashboard() {
     setPickedForSend(new Set());
     say("searching Crustdata…");
     try {
-      const r = await fetch("/api/search", { method: "POST", body: "{}" });
+      const r = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          industries: filters.industries,
+          countries: filters.countries,
+          fundingMin: filters.fundingMin,
+          fundingMax: filters.fundingMax,
+          revenueMin: filters.revenueMin,
+          revenueMax: filters.revenueMax,
+        }),
+      });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       setRanked(data.ranked);
@@ -180,7 +193,13 @@ export default function Dashboard() {
       {/* Wizard body */}
       <section className="mt-10">
         <div key={step} className="step-enter">
-          {step === "idle" && <StepSearch onStart={startSearch} />}
+          {step === "idle" && (
+            <StepSearch
+              onStart={startSearch}
+              filters={filters}
+              onFilters={setFilters}
+            />
+          )}
           {step === "searching" && <LoadingSearch />}
           {step === "ranked" && (
             <StepRanked
@@ -437,7 +456,15 @@ function Stepper({
 /* Step 1 — Search                                                      */
 /* ------------------------------------------------------------------ */
 
-function StepSearch({ onStart }: { onStart: () => void }) {
+function StepSearch({
+  onStart,
+  filters,
+  onFilters,
+}: {
+  onStart: () => void;
+  filters: SearchFilters;
+  onFilters: (f: SearchFilters) => void;
+}) {
   return (
     <div className="relative mx-auto max-w-3xl text-center py-4 md:py-8">
       <span className="tag">01 · prospecting</span>
@@ -458,8 +485,16 @@ function StepSearch({ onStart }: { onStart: () => void }) {
         hand you the pick of the litter. You stay the boss.
       </p>
 
-      <div className="mt-10 inline-flex flex-col items-center relative">
-        <button className="btn btn-primary btn-lg" onClick={onStart}>
+      <div className="mt-10 max-w-2xl mx-auto text-left">
+        <FilterPanel value={filters} onChange={onFilters} />
+      </div>
+
+      <div className="mt-8 inline-flex flex-col items-center relative">
+        <button
+          className="btn btn-primary btn-lg"
+          onClick={onStart}
+          disabled={filters.countries.length === 0}
+        >
           Start search →
         </button>
         <HandArrow className="hidden md:block absolute -left-36 -top-3 w-36 h-24 -rotate-6" />

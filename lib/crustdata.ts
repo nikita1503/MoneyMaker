@@ -83,6 +83,28 @@ export type V2Filters = { op: "and" | "or"; conditions: V2Condition[] };
 //   { companies: [...], next_cursor: "<opaque>" | null, total_count: N }
 // Paginate by passing `cursor: next_cursor` on the next request. Passing
 // `offset` is rejected with 400.
+// v2 autocomplete — used to populate the industry typeahead in the UI.
+// Live-verified: `/company/search/autocomplete` accepts { field, query }.
+export async function autocompleteV2(field: string, query: string): Promise<string[]> {
+  const res = await fetch(`${BASE}/company/search/autocomplete`, {
+    method: "POST",
+    headers: headersV2({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ field, query }),
+  });
+  if (!res.ok) {
+    const b = await res.text();
+    throw new Error(`crustdata v2 autocomplete ${res.status}: ${b.slice(0, 200)}`);
+  }
+  const data: any = await res.json();
+  // Response is either an array of strings or a shape like {suggestions:[...]}.
+  const raw: any[] = Array.isArray(data)
+    ? data
+    : (data.suggestions ?? data.results ?? data.options ?? data.values ?? []);
+  return raw
+    .map((x: any) => (typeof x === "string" ? x : x.value ?? x.name ?? x.label ?? ""))
+    .filter(Boolean);
+}
+
 export async function searchCompaniesV2(
   filters: V2Filters,
   opts: { limit?: number; cursor?: string | null } = {}

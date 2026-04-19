@@ -61,7 +61,7 @@ Gmail drag-and-drop.
 | `SMTP_PASS`      | app-specific password                |
 | `SMTP_FROM`      | `"Alex <alex@gmail.com>"`            |
 | `DEV_MODE_EMAIL` | `you@gmail.com` — redirects all outbound mail here (blank = off) |
-| `PAYMENT_DETAILS`| `Paypal: alex@gmail.com | Stripe: …` |
+| `PAYMENT_DETAILS`| `Paypal: alex@gmail.com`             |
 
 ### Dev mode
 
