@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: radial-gradient(1200px 600px at 80% -10%, rgba(124,92,255,0.12), transparent 60%),
+              radial-gradient(900px 500px at -10% 110%, rgba(57,208,216,0.08), transparent 60%),
+              #07070d;
+  color: #e9e9f2;
+  min-height: 100vh;
+}
+
+.btn {
+  @apply inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm font-medium
+         bg-card text-white/90 hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed;
+}
+.btn-primary {
+  @apply border-transparent bg-gradient-to-br from-accent to-accent2 text-white hover:brightness-110;
+}
+.btn-ghost {
+  @apply border-transparent bg-transparent hover:bg-white/5;
+}
+.card {
+  @apply rounded-xl border border-line bg-card/70 backdrop-blur;
+}
+.chip {
+  @apply inline-flex items-center rounded-full border border-line px-2 py-0.5 text-[11px] text-white/70;
+}
+.field {
+  @apply w-full rounded-md border border-line bg-ink/60 px-3 py-2 text-sm outline-none focus:border-accent;
+}
+label.lbl { @apply block text-xs uppercase tracking-wider text-muted mb-1; }
+
+/* scrollbar */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: #23233a; border-radius: 999px; }
+*::-webkit-scrollbar-track { background: transparent; }
